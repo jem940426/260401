@@ -209,7 +209,13 @@ if st.session_state.results:
             return 'color: #ff4b4b; font-weight: bold;'
         return ''
 
-    st.dataframe(df_display.style.applymap(highlight_failures), use_container_width=True)
+    # 최신 Pandas(3.0 이상)에서는 applymap 대신 map을 사용합니다.
+    try:
+        styled_df = df_display.style.map(highlight_failures)
+    except AttributeError:
+        styled_df = df_display.style.applymap(highlight_failures)
+
+    st.dataframe(styled_df, use_container_width=True)
     
     # 요약 정보
     fail_count = len(st.session_state.failure_details)
