@@ -229,20 +229,21 @@ if st.session_state.results:
     ws.title = "결과"
     ws.append(cols)  # 헤더 행
     
+    # ---- 숫자 정렬 맞춤 처리 ----
+    # 문자로 된 숫자('103450' 등)를 진짜 숫자로 바꿔주어 표에서 오른쪽으로 예쁘게 정렬되도록 합니다.
+    # 단, '실패', '없음' 등 문자는 무시하고 그대로 둡니다.
+    for col in ['공급가액', '부가세']:
+        df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='ignore')
+
     for _, row in df.iterrows():
         ws.append(list(row[cols]))
     
-    # SUM 수식 삽입 (합계금액 콜럼만 합산)
-    total_col_idx = cols.index('합계금액') + 1  # openpyxl 1-indexed
-    total_col_letter = get_column_letter(total_col_idx)
-    data_start_row = 2
-    data_end_row = 1 + len(df)
-    sum_row_idx = data_end_row + 1
-    
-    # 엑셀의 마지막 줄에 합계 행을 깔끔하게 추가합니다
+    # 총 합계액 계산 (화면에서 썼던 total_val을 그대로 사용)
+    # openpyxl 수식(=SUM)은 인터넷 다운로드 파일(제한된 보기)에서 빈칸으로 보일 수 있어 실제 값을 삽입합니다.
     summary_row = [''] * len(cols)
     summary_row[0] = '합계'
-    summary_row[total_col_idx - 1] = f"=SUM({total_col_letter}{data_start_row}:{total_col_letter}{data_end_row})"
+    total_col_idx = cols.index('합계금액')
+    summary_row[total_col_idx] = int(total_val) if pd.notna(total_val) else 0
     ws.append(summary_row)
     
     if st.session_state.failure_details:
