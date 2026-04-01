@@ -229,30 +229,21 @@ if st.session_state.results:
     ws.title = "결과"
     ws.append(cols)  # 헤더 행
     
-    for r in st.session_state.results:
-        # 엑셀 행 생성: 부가세포함과 합계금액은 쪼간 계산
-        row_vals = []
-        for c in cols:
-            if c == '부가세포함':
-                row_vals.append(check_vat(r.get('부가세', 0)))
-            elif c == '합계금액':
-                try:
-                    val = int(float(str(r.get('공급가액', 0)).replace(',', ''))) + int(float(str(r.get('부가세', 0)).replace(',', '')))
-                    row_vals.append(val)
-                except Exception:
-                    row_vals.append('-')
-            else:
-                row_vals.append(r.get(c))
-        ws.append(row_vals)
+    for _, row in df.iterrows():
+        ws.append(list(row[cols]))
     
     # SUM 수식 삽입 (합계금액 콜럼만 합산)
     total_col_idx = cols.index('합계금액') + 1  # openpyxl 1-indexed
     total_col_letter = get_column_letter(total_col_idx)
     data_start_row = 2
-    data_end_row = 1 + len(st.session_state.results)
+    data_end_row = 1 + len(df)
     sum_row_idx = data_end_row + 1
-    ws.cell(row=sum_row_idx, column=1).value = "합계"
-    ws.cell(row=sum_row_idx, column=total_col_idx).value = f"=SUM({total_col_letter}{data_start_row}:{total_col_letter}{data_end_row})"
+    
+    # 엑셀의 마지막 줄에 합계 행을 깔끔하게 추가합니다
+    summary_row = [''] * len(cols)
+    summary_row[0] = '합계'
+    summary_row[total_col_idx - 1] = f"=SUM({total_col_letter}{data_start_row}:{total_col_letter}{data_end_row})"
+    ws.append(summary_row)
     
     if st.session_state.failure_details:
         ws_fail = wb.create_sheet("실패 목록")
