@@ -233,7 +233,9 @@ if st.session_state.results:
     # 문자로 된 숫자('103450' 등)를 진짜 숫자로 바꿔주어 표에서 오른쪽으로 예쁘게 정렬되도록 합니다.
     # 단, '실패', '없음' 등 문자는 무시하고 그대로 둡니다.
     for col in ['공급가액', '부가세']:
-        df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='ignore')
+        # 쉼표를 제거하고 숫자로 강제 변환하되, 실패 시 문자열 원본을 그대로 유지합니다.
+        clean_col = df[col].astype(str).str.replace(',', '')
+        df[col] = pd.to_numeric(clean_col, errors='coerce').fillna(df[col])
 
     for _, row in df.iterrows():
         ws.append(list(row[cols]))
